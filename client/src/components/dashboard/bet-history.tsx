@@ -1,6 +1,14 @@
 import { format } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 
 interface BetHistoryProps {
   bets: any[];
@@ -47,36 +55,101 @@ export function BetHistory({ bets }: BetHistoryProps) {
           </thead>
           <tbody className="divide-y divide-border">
             {sortedBets.map((bet) => (
-              <tr key={bet.id} className="hover:bg-white/5 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap text-muted-foreground">
-                  {format(new Date(bet.gameDate || bet.createdAt), 'MMM d, yyyy')}
-                </td>
-                <td className="px-6 py-4 font-medium text-foreground">
-                  {bet.team} {bet.line !== 0 && (bet.line > 0 ? `+${bet.line}` : bet.line)}
-                </td>
-                <td className="px-6 py-4 text-muted-foreground capitalize">
-                  {bet.betType}
-                </td>
-                <td className="px-6 py-4 text-muted-foreground">
-                  {bet.odds > 0 ? `+${bet.odds}` : bet.odds}
-                </td>
-                <td className="px-6 py-4 font-medium">
-                  ${bet.amount.toFixed(2)}
-                </td>
-                <td className="px-6 py-4">
-                  <Badge variant="outline" className={`capitalize no-default-active-elevate ${getResultColor(bet.result)}`}>
-                    {bet.result}
-                  </Badge>
-                </td>
-                <td className={`px-6 py-4 font-bold text-right ${
-                  bet.profitLoss > 0 ? 'text-primary' : 
-                  bet.profitLoss < 0 ? 'text-destructive' : 
-                  'text-muted-foreground'
-                }`}>
-                  {bet.result === 'pending' ? '-' : 
-                   `${bet.profitLoss > 0 ? '+' : ''}$${Math.abs(bet.profitLoss || 0).toFixed(2)}`}
-                </td>
-              </tr>
+              <Dialog key={bet.id}>
+                <DialogTrigger asChild>
+                  <tr className="hover:bg-white/5 transition-colors cursor-pointer group">
+                    <td className="px-6 py-4 whitespace-nowrap text-muted-foreground">
+                      {format(new Date(bet.gameDate || bet.createdAt), 'MMM d, yyyy')}
+                    </td>
+                    <td className="px-6 py-4 font-medium text-foreground group-hover:text-primary transition-colors">
+                      {bet.team} {bet.line !== 0 && (bet.line > 0 ? `+${bet.line}` : bet.line)}
+                    </td>
+                    <td className="px-6 py-4 text-muted-foreground capitalize">
+                      {bet.betType}
+                    </td>
+                    <td className="px-6 py-4 text-muted-foreground">
+                      {bet.odds > 0 ? `+${bet.odds}` : bet.odds}
+                    </td>
+                    <td className="px-6 py-4 font-medium">
+                      ${bet.amount.toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4">
+                      <Badge variant="outline" className={`capitalize no-default-active-elevate ${getResultColor(bet.result)}`}>
+                        {bet.result}
+                      </Badge>
+                    </td>
+                    <td className={`px-6 py-4 font-bold text-right ${
+                      bet.profitLoss > 0 ? 'text-primary' : 
+                      bet.profitLoss < 0 ? 'text-destructive' : 
+                      'text-muted-foreground'
+                    }`}>
+                      {bet.result === 'pending' ? '-' : 
+                       `${bet.profitLoss > 0 ? '+' : ''}$${Math.abs(bet.profitLoss || 0).toFixed(2)}`}
+                    </td>
+                  </tr>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md bg-card border-border">
+                  <DialogHeader>
+                    <DialogTitle className="text-2xl font-display">Bet Details</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-6 pt-4">
+                    <div className="flex justify-between items-end">
+                      <div>
+                        <p className="text-sm text-muted-foreground uppercase tracking-wider mb-1">Pick</p>
+                        <h3 className="text-3xl font-bold text-foreground">
+                          {bet.team} {bet.line !== 0 && (bet.line > 0 ? `+${bet.line}` : bet.line)}
+                        </h3>
+                      </div>
+                      <Badge variant="outline" className={`text-sm px-3 py-1 capitalize ${getResultColor(bet.result)}`}>
+                        {bet.result}
+                      </Badge>
+                    </div>
+
+                    <Separator className="bg-border/50" />
+
+                    <div className="grid grid-cols-2 gap-6">
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-1">Bet Type</p>
+                        <p className="text-lg font-semibold capitalize">{bet.betType}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-1">Odds</p>
+                        <p className="text-lg font-semibold">{bet.odds > 0 ? `+${bet.odds}` : bet.odds}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-1">Stake</p>
+                        <p className="text-lg font-semibold">${bet.amount.toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-1">Profit/Loss</p>
+                        <p className={`text-lg font-bold ${
+                          bet.profitLoss > 0 ? 'text-primary' : 
+                          bet.profitLoss < 0 ? 'text-destructive' : 
+                          'text-muted-foreground'
+                        }`}>
+                          {bet.result === 'pending' ? '-' : 
+                           `${bet.profitLoss > 0 ? '+' : ''}$${Math.abs(bet.profitLoss || 0).toFixed(2)}`}
+                        </p>
+                      </div>
+                    </div>
+
+                    <Separator className="bg-border/50" />
+
+                    <div className="grid grid-cols-1 gap-4 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Placed On</span>
+                        <span className="text-foreground font-medium">{format(new Date(bet.createdAt), 'MMM d, yyyy HH:mm')}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Game Date</span>
+                        <span className="text-foreground font-medium">
+                          {bet.gameDate ? format(new Date(bet.gameDate), 'MMM d, yyyy') : 'N/A'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
             ))}
           </tbody>
         </table>

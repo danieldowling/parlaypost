@@ -35,11 +35,23 @@ export function useUserBets(userId?: number) {
       const res = await fetch(url, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch user bets");
       const data = await res.json();
+      
       // Ensure date objects are correctly parsed
-      const schemaWithDates = z.array(api.users.bets.responses[200].element.extend({
+      const schemaWithDates = z.array(z.object({
+        id: z.number(),
+        userId: z.number(),
+        groupId: z.number().nullable(),
+        team: z.string(),
+        betType: z.string(),
+        line: z.number(),
+        odds: z.number(),
+        amount: z.coerce.number(),
         gameDate: z.coerce.date().nullable(),
-        createdAt: z.coerce.date().nullable(),
+        result: z.string().nullable(),
+        profitLoss: z.coerce.number().nullable(),
+        createdAt: z.coerce.date(),
       }));
+      
       return parseWithLogging(schemaWithDates, data, "users.bets");
     },
     enabled: !!userId,

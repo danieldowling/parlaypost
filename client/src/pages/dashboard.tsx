@@ -3,13 +3,50 @@ import { useUserStats, useUserBets } from "@/hooks/use-user";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { ProfitChart } from "@/components/dashboard/profit-chart";
 import { BetHistory } from "@/components/dashboard/bet-history";
-import { DollarSign, Percent, Hash, Activity } from "lucide-react";
+import { DollarSign, Percent, Hash, Activity, Send } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
+import { api } from "@shared/routes";
 
 export default function Dashboard() {
   const { user } = useAuth();
   const { data: stats, isLoading: isLoadingStats } = useUserStats(user?.id);
   const { data: bets, isLoading: isLoadingBets } = useUserBets(user?.id);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const simulateSmsBet = async () => {
+    try {
+      const res = await fetch('/api/webhook/sms', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          Body: '$50 Knicks -4.5 vs Bulls',
+          From: '+1234567890',
+        }),
+      });
+
+      if (res.ok) {
+        toast({
+          title: "SMS Sent",
+          description: "Simulated bet text sent successfully!",
+        });
+        // Invalidate queries to refresh data
+        queryClient.invalidateQueries({ queryKey: [api.users.stats.path, user?.id] });
+        queryClient.invalidateQueries({ queryKey: [api.users.bets.path, user?.id] });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to simulate SMS bet",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (isLoadingStats || isLoadingBets) {
     return (
@@ -33,9 +70,19 @@ export default function Dashboard() {
           <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">Dashboard</h1>
           <p className="text-muted-foreground mt-1">Welcome back, {user?.name}. Here's how you're performing.</p>
         </div>
-        <div className="flex items-center space-x-2 bg-card px-4 py-2 rounded-xl border border-border/50">
-          <span className="text-sm text-muted-foreground mr-2">SMS Number:</span>
-          <span className="font-mono text-primary font-bold">(555) 019-BETS</span>
+        <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+          <Button 
+            onClick={simulateSmsBet}
+            variant="outline"
+            className="bg-primary/10 hover:bg-primary/20 border-primary/20 text-primary"
+          >
+            <Send className="w-4 h-4 mr-2" />
+            Simulate SMS Bet
+          </Button>
+          <div className="flex items-center space-x-2 bg-card px-4 py-2 rounded-xl border border-border/50">
+            <span className="text-sm text-muted-foreground mr-2">SMS Number:</span>
+            <span className="font-mono text-primary font-bold">(555) 019-BETS</span>
+          </div>
         </div>
       </div>
 

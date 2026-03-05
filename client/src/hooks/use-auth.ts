@@ -17,11 +17,16 @@ export function useAuth() {
   const { data: user, isLoading, error } = useQuery({
     queryKey: [api.auth.me.path],
     queryFn: async () => {
-      const res = await fetch(api.auth.me.path, { credentials: "include" });
-      if (res.status === 401) return null;
-      if (!res.ok) throw new Error("Failed to fetch user");
-      const data = await res.json();
-      return parseWithLogging(api.auth.me.responses[200], data, "auth.me");
+      try {
+        const res = await fetch(api.auth.me.path, { credentials: "include" });
+        if (res.status === 401) return null;
+        if (!res.ok) throw new Error("Failed to fetch user");
+        const data = await res.json();
+        return parseWithLogging(api.auth.me.responses[200], data, "auth.me");
+      } catch (e) {
+        console.error("Error in useAuth queryFn:", e);
+        return null;
+      }
     },
     retry: false,
   });

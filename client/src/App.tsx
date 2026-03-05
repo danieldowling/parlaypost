@@ -39,9 +39,27 @@ function Router() {
   return (
     <Switch>
       <Route path="/auth" component={AuthPage} />
-      <Route path="/" render={() => <ProtectedRoute component={Dashboard} />} />
-      <Route path="/groups" render={() => <ProtectedRoute component={Groups} />} />
-      <Route path="/groups/:id" render={() => <ProtectedRoute component={GroupDetail} />} />
+      <Route path="/">
+        <ProtectedRoute component={() => (
+          <AppLayout>
+            <Dashboard />
+          </AppLayout>
+        )} />
+      </Route>
+      <Route path="/groups">
+        <ProtectedRoute component={() => (
+          <AppLayout>
+            <Groups />
+          </AppLayout>
+        )} />
+      </Route>
+      <Route path="/groups/:id">
+        <ProtectedRoute component={() => (
+          <AppLayout>
+            <GroupDetail />
+          </AppLayout>
+        )} />
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );
@@ -51,9 +69,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <AppLayout>
-          <Router />
-        </AppLayout>
+        <Router />
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>

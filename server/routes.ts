@@ -214,15 +214,38 @@ export async function registerRoutes(
     const { Body, From } = req.body;
     
     console.log(`Received SMS from ${From}: ${Body}`);
-    // A simplistic parser for MVP: "$50 Knicks -4.5 vs Bulls"
-    // We would need to look up the user by phone number (if we added it to schema)
-    // For now, this is a placeholder acknowledging the receipt.
     
-    // In a full implementation:
-    // 1. Find user by phone number
-    // 2. Parse the body text using an LLM or regex
-    // 3. await storage.createBet({ ...parsedData, userId: user.id })
-    // 4. Send Twilio response confirming the bet was logged
+    try {
+      // Basic regex parser for "$50 Knicks -4.5 vs Bulls"
+      const amountMatch = Body.match(/\$(\d+(\.\d+)?)/);
+      const teamMatch = Body.match(/\$\d+(?:\.\d+)?\s+([A-Za-z]+)/);
+      const lineMatch = Body.slice(Body.indexOf(teamMatch ? teamMatch[1] : '')).match(/([+-]\d+(\.\d+)?)/);
+
+      if (amountMatch && teamMatch) {
+        const amount = parseFloat(amountMatch[1]);
+        const team = teamMatch[1];
+        const line = lineMatch ? parseFloat(lineMatch[1]) : 0;
+        
+        // Find Alice as the default user for simulation if phone lookup isn't implemented
+        const alice = await storage.getUserByEmail("alice@example.com");
+        
+        if (alice) {
+          await storage.createBet({
+            userId: alice.id,
+            team: team,
+            betType: line !== 0 ? 'spread' : 'moneyline',
+            line: line,
+            odds: -110, // Default odds for simulation
+            amount: amount,
+            result: 'pending',
+            profitLoss: 0
+          });
+          console.log(`Bet stored: ${amount} on ${team} ${line}`);
+        }
+      }
+    } catch (err) {
+      console.error("Error parsing SMS bet:", err);
+    }
     
     res.type('text/xml');
     res.send('<Response><Message>Bet logged in ParlayPost!</Message></Response>');

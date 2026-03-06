@@ -8,6 +8,9 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { getLiveOdds } from "./odds";
 import { parseBet, betConfirmationMessage } from "./bet-parser";
+import bcrypt from "bcryptjs";
+
+const SALT_ROUNDS = 12;
 
 export async function registerRoutes(
   httpServer: Server,
@@ -27,8 +30,8 @@ export async function registerRoutes(
     try {
       const user = await storage.getUserByEmail(email);
       if (!user) return done(null, false, { message: 'Incorrect email.' });
-      // In a real app we'd hash and compare passwords, but keeping it simple for MVP
-      if (user.password !== password) return done(null, false, { message: 'Incorrect password.' });
+      const valid = await bcrypt.compare(password, user.password);
+      if (!valid) return done(null, false, { message: 'Incorrect password.' });
       return done(null, user);
     } catch (err) {
       return done(err);
@@ -48,6 +51,11 @@ export async function registerRoutes(
     }
   });
 
+  const safeUser = (user: any) => {
+    const { password: _, ...rest } = user;
+    return rest;
+  };
+
   // Auth routes
   app.post(api.auth.register.path, async (req, res) => {
     try {
@@ -56,10 +64,11 @@ export async function registerRoutes(
       if (existingUser) {
         return res.status(400).json({ message: "Email already exists" });
       }
-      const user = await storage.createUser(input);
+      const hashedPassword = await bcrypt.hash(input.password, SALT_ROUNDS);
+      const user = await storage.createUser({ ...input, password: hashedPassword });
       req.login(user, (err) => {
         if (err) throw err;
-        res.status(201).json(user);
+        res.status(201).json(safeUser(user));
       });
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -73,7 +82,7 @@ export async function registerRoutes(
   });
 
   app.post(api.auth.login.path, passport.authenticate('local'), (req, res) => {
-    res.json(req.user);
+    res.json(safeUser(req.user));
   });
 
   app.post(api.auth.logout.path, (req, res) => {
@@ -86,7 +95,7 @@ export async function registerRoutes(
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    res.json(req.user);
+    res.json(safeUser(req.user));
   });
 
   // User Stats and Bets

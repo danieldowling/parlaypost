@@ -2,6 +2,22 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import bcrypt from "bcryptjs";
+import { db } from "./db";
+import { users } from "@shared/schema";
+
+async function migratePasswordsToHash() {
+  const allUsers = await db.select().from(users);
+  for (const user of allUsers) {
+    if (!user.password.startsWith("$2b$") && !user.password.startsWith("$2a$")) {
+      const hashed = await bcrypt.hash(user.password, 12);
+      await db.update(users).set({ password: hashed }).where(
+        (await import("drizzle-orm")).eq(users.id, user.id)
+      );
+      console.log(`[startup] Migrated password for user ${user.email} to bcrypt hash`);
+    }
+  }
+}
 
 const app = express();
 const httpServer = createServer(app);
@@ -60,6 +76,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  await migratePasswordsToHash();
   await registerRoutes(httpServer, app);
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {

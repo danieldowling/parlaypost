@@ -7,6 +7,7 @@ import session from "express-session";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { getLiveOdds } from "./odds";
+import { parseBet, betConfirmationMessage } from "./bet-parser";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -223,54 +224,42 @@ export async function registerRoutes(
     }
   });
 
-  // Webhook for SMS parsing (Twilio example)
+  // Webhook for SMS parsing (Twilio)
   app.post('/api/webhook/sms', async (req, res) => {
     const { Body, From } = req.body;
-    
     console.log(`Received SMS from ${From}: ${Body}`);
-    
-    try {
-      // Improved regex parser for "$50 Knicks -4.5 vs Bulls"
-      // Matches amount: $50, $50.50
-      const amountMatch = Body.match(/\$(\d+(\.\d+)?)/);
-      
-      // Matches team name after the amount (e.g., Knicks, Bulls, Lakers)
-      // Look for the first word after the dollar amount
-      const teamMatch = Body.match(/\$\d+(?:\.\d+)?\s+([A-Za-z]+)/);
-      
-      // Matches the line/spread (e.g., -4.5, +7, -110)
-      // Only looks for numbers with a sign (+/-)
-      const lineMatch = Body.match(/([+-]\d+(\.\d+)?)/);
 
-      if (amountMatch && teamMatch) {
-        const amount = parseFloat(amountMatch[1]);
-        const team = teamMatch[1];
-        // If line is found, use it, otherwise default to 0 (moneyline)
-        const line = lineMatch ? parseFloat(lineMatch[1]) : 0;
-        
-        // Find Alice as the default user for simulation if phone lookup isn't implemented
+    let replyMessage = "Sorry, couldn't parse that bet. Try: \"$50 Knicks -4.5\" or \"Lakers ML for $100\"";
+
+    try {
+      const parsed = parseBet(Body);
+
+      if (parsed) {
         const alice = await storage.getUserByEmail("alice@example.com");
-        
+
         if (alice) {
           await storage.createBet({
             userId: alice.id,
-            team: team,
-            betType: line !== 0 ? 'spread' : 'moneyline',
-            line: line,
-            odds: -110, // Default odds for simulation
-            amount: amount,
+            team: parsed.team,
+            betType: parsed.betType,
+            line: parsed.line,
+            odds: parsed.odds,
+            amount: parsed.amount,
             result: 'pending',
             profitLoss: 0
           });
-          console.log(`Bet stored: ${amount} on ${team} ${line}`);
+          replyMessage = betConfirmationMessage(parsed);
+          console.log(`Bet stored: ${JSON.stringify(parsed)}`);
         }
+      } else {
+        console.log(`Could not parse bet from: "${Body}"`);
       }
     } catch (err) {
       console.error("Error parsing SMS bet:", err);
     }
-    
+
     res.type('text/xml');
-    res.send('<Response><Message>Bet logged in ParlayPost!</Message></Response>');
+    res.send(`<Response><Message>${replyMessage}</Message></Response>`);
   });
 
   return httpServer;

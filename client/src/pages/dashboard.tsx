@@ -12,42 +12,57 @@ import { api } from "@shared/routes";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 
+const EXAMPLE_BETS = [
+  "$50 Knicks -4.5",
+  "Lakers ML for $100",
+  "Celtics -5.5 -110 $75",
+  "$200 over 220.5 Warriors",
+  "Bulls +7 $50",
+  "$150 under 47.5",
+  "Nuggets moneyline $80",
+  "Heat -3 for $60",
+];
+
 export default function Dashboard() {
   const { user } = useAuth();
   const { data: stats, isLoading: isLoadingStats } = useUserStats(user?.id);
   const { data: bets, isLoading: isLoadingBets } = useUserBets(user?.id);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [smsText, setSmsText] = useState("$50 Knicks -4.5 vs Bulls");
+  const [smsText, setSmsText] = useState("$50 Knicks -4.5");
+  const [isSending, setIsSending] = useState(false);
 
   const simulateSmsBet = async () => {
+    setIsSending(true);
     try {
       const res = await fetch('/api/webhook/sms', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          Body: smsText,
-          From: '+1234567890',
-        }),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ Body: smsText, From: '+1234567890' }),
       });
 
       if (res.ok) {
+        // Parse the Twilio XML response to extract the reply message
+        const xml = await res.text();
+        const msgMatch = xml.match(/<Message>(.*?)<\/Message>/s);
+        const reply = msgMatch ? msgMatch[1] : "Bet logged!";
+        const failed = reply.toLowerCase().startsWith("sorry");
+
         toast({
-          title: "SMS Sent",
-          description: "Simulated bet text sent successfully!",
+          title: failed ? "Couldn't parse bet" : "Bet logged!",
+          description: reply,
+          variant: failed ? "destructive" : "default",
         });
-        // Invalidate queries to refresh data
-        queryClient.invalidateQueries({ queryKey: [api.users.stats.path, user?.id] });
-        queryClient.invalidateQueries({ queryKey: [api.users.bets.path, user?.id] });
+
+        if (!failed) {
+          queryClient.invalidateQueries({ queryKey: [api.users.stats.path, user?.id] });
+          queryClient.invalidateQueries({ queryKey: [api.users.bets.path, user?.id] });
+        }
       }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to simulate SMS bet",
-        variant: "destructive",
-      });
+    } catch {
+      toast({ title: "Error", description: "Failed to simulate SMS bet", variant: "destructive" });
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -73,26 +88,38 @@ export default function Dashboard() {
           <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">Dashboard</h1>
           <p className="text-muted-foreground mt-1">Welcome back, {user?.name}. Here's how you're performing.</p>
         </div>
-        <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+        <div className="flex flex-col gap-2 w-full md:w-auto">
           <div className="flex items-center gap-2">
-            <Input 
+            <Input
               value={smsText}
               onChange={(e) => setSmsText(e.target.value)}
-              className="w-64 bg-background border-primary/20"
-              placeholder="Enter bet text..."
+              onKeyDown={(e) => e.key === "Enter" && simulateSmsBet()}
+              className="w-72 bg-background border-primary/20"
+              placeholder='e.g. "Lakers ML for $100"'
+              data-testid="input-sms-bet"
             />
-            <Button 
+            <Button
               onClick={simulateSmsBet}
+              disabled={isSending}
               variant="outline"
               className="bg-primary/10 hover:bg-primary/20 border-primary/20 text-primary whitespace-nowrap"
+              data-testid="button-simulate-sms"
             >
               <Send className="w-4 h-4 mr-2" />
-              Simulate SMS
+              {isSending ? "Sending…" : "Simulate SMS"}
             </Button>
           </div>
-          <div className="flex items-center space-x-2 bg-card px-4 py-2 rounded-xl border border-border/50">
-            <span className="text-sm text-muted-foreground mr-2">SMS Number:</span>
-            <span className="font-mono text-primary font-bold">(555) 019-BETS</span>
+          <div className="flex flex-wrap gap-1">
+            {EXAMPLE_BETS.map(ex => (
+              <button
+                key={ex}
+                onClick={() => setSmsText(ex)}
+                className="text-xs px-2 py-0.5 rounded-full bg-white/5 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors border border-border/40"
+                data-testid={`button-example-bet-${ex.replace(/\s+/g, "-").replace(/[^a-zA-Z0-9-]/g, "")}`}
+              >
+                {ex}
+              </button>
+            ))}
           </div>
         </div>
       </div>

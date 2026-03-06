@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Dark background -->
+  <rect width="32" height="32" rx="7" fill="#0f1a2e"/>
+  <!-- Chat bubble fill (subtle) -->
+  <path d="M5 5.5C5 4.67 5.67 4 6.5 4H25.5C26.33 4 27 4.67 27 5.5V19.5C27 20.33 26.33 21 25.5 21H18.5L14.5 25.5V21H6.5C5.67 21 5 20.33 5 19.5V5.5Z" fill="#22c55e" fill-opacity="0.12"/>
+  <!-- Chat bubble border -->
+  <path d="M5 5.5C5 4.67 5.67 4 6.5 4H25.5C26.33 4 27 4.67 27 5.5V19.5C27 20.33 26.33 21 25.5 21H18.5L14.5 25.5V21H6.5C5.67 21 5 20.33 5 19.5V5.5Z" fill="none" stroke="#22c55e" stroke-width="1.75" stroke-linejoin="round"/>
+  <!-- Text lines inside bubble -->
+  <line x1="9" y1="9.5" x2="23" y2="9.5" stroke="#22c55e" stroke-width="1.75" stroke-linecap="round"/>
+  <line x1="9" y1="13" x2="23" y2="13" stroke="#22c55e" stroke-width="1.75" stroke-linecap="round"/>
+  <line x1="9" y1="16.5" x2="17" y2="16.5" stroke="#22c55e" stroke-width="1.75" stroke-linecap="round"/>
+</svg>

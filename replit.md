@@ -81,6 +81,16 @@ Key pages:
 | `DATABASE_URL` | PostgreSQL connection string |
 | `ODDS_API_KEY` | The Odds API authentication key |
 | `SESSION_SECRET` | Express session signing secret (defaults to hardcoded string if absent) |
+| `TWILIO_ACCOUNT_SID` | Twilio Account SID (optional — enables real SMS) |
+| `TWILIO_AUTH_TOKEN` | Twilio Auth Token (optional — enables real SMS) |
+| `TWILIO_PHONE_NUMBER` | Twilio phone number in E.164 format e.g. +15551234567 (optional) |
+
+### Twilio SMS Integration
+- **Status:** Credentials not yet provided. The Replit Twilio connector (`connector:ccfg_twilio_01K69QJTED9YTJFE2SJ7E4SY08`) was proposed but dismissed by the user.
+- **Alternative:** User can provide `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_PHONE_NUMBER` as secrets manually.
+- **Webhook endpoint:** `POST /api/webhook/sms` — already parses bets from SMS body text.
+- **To activate real SMS:** Once secrets are set, update `server/routes.ts` to send a Twilio confirmation reply using the `twilio` npm package.
+- **Privacy policy:** Available at `/privacy` — required by Twilio during A2P 10DLC registration.
 
 ### Key NPM Dependencies
 | Package | Role |

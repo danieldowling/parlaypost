@@ -14,6 +14,7 @@ import Dashboard from "@/pages/dashboard";
 import Groups from "@/pages/groups";
 import GroupDetail from "@/pages/group-detail";
 import LiveOdds from "@/pages/live-odds";
+import PrivacyPolicy from "@/pages/privacy-policy";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { user, isLoading } = useAuth();
@@ -68,6 +69,7 @@ function Router() {
           </AppLayout>
         )} />
       </Route>
+      <Route path="/privacy" component={PrivacyPolicy} />
       <Route component={NotFound} />
     </Switch>
   );

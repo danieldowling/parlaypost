@@ -21,6 +21,16 @@ type OddsGame = {
   total?: { point: number; overOdds: number; underOdds: number };
 };
 
+const TABS = [
+  { value: "all",  label: "All",      sports: "basketball_nba,basketball_ncaab,americanfootball_nfl,americanfootball_ncaaf,icehockey_nhl,baseball_mlb" },
+  { value: "nba",  label: "NBA",      sports: "basketball_nba" },
+  { value: "ncaab",label: "NCAAB",    sports: "basketball_ncaab" },
+  { value: "nfl",  label: "NFL",      sports: "americanfootball_nfl" },
+  { value: "ncaaf",label: "NCAAF",    sports: "americanfootball_ncaaf" },
+  { value: "nhl",  label: "NHL",      sports: "icehockey_nhl" },
+  { value: "mlb",  label: "MLB",      sports: "baseball_mlb" },
+];
+
 function formatOdds(odds: number): string {
   return odds > 0 ? `+${odds}` : `${odds}`;
 }
@@ -29,7 +39,7 @@ function OddsCell({ label, odds, point }: { label: string; odds: number; point?:
   const isPositive = odds > 0;
   return (
     <div className="flex flex-col items-center justify-center py-3 px-2 rounded-md bg-white/5 hover-elevate min-w-[80px]">
-      <span className="text-xs text-muted-foreground mb-1 truncate max-w-full">{label}</span>
+      <span className="text-xs text-muted-foreground mb-1 truncate max-w-full text-center">{label}</span>
       {point !== undefined && (
         <span className="text-sm font-semibold text-foreground">{point > 0 ? `+${point}` : point}</span>
       )}
@@ -43,7 +53,7 @@ function OddsCell({ label, odds, point }: { label: string; odds: number; point?:
 function GameCard({ game }: { game: OddsGame }) {
   const gameTime = new Date(game.commenceTime);
   const isToday = new Date().toDateString() === gameTime.toDateString();
-  const isSoon = gameTime.getTime() - Date.now() < 2 * 60 * 60 * 1000; // within 2 hours
+  const isSoon = gameTime.getTime() - Date.now() < 2 * 60 * 60 * 1000;
 
   return (
     <Card className="p-4 bg-card border-border/50 hover-elevate" data-testid={`card-game-${game.id}`}>
@@ -111,20 +121,16 @@ function GameCard({ game }: { game: OddsGame }) {
 export default function LiveOdds() {
   const [activeTab, setActiveTab] = useState("all");
 
+  const activeSports = TABS.find(t => t.value === activeTab)?.sports ?? TABS[0].sports;
+
   const { data: games, isLoading, error, dataUpdatedAt } = useQuery<OddsGame[]>({
     queryKey: [api.odds.live.path, activeTab],
     queryFn: async () => {
-      const sportMap: Record<string, string> = {
-        nba: "basketball_nba",
-        nfl: "americanfootball_nfl",
-        all: "basketball_nba,americanfootball_nfl",
-      };
-      const sports = sportMap[activeTab] || "basketball_nba,americanfootball_nfl";
-      const res = await fetch(`${api.odds.live.path}?sports=${sports}`, { credentials: "include" });
+      const res = await fetch(`${api.odds.live.path}?sports=${activeSports}`, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch odds");
       return res.json();
     },
-    refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
+    refetchInterval: 5 * 60 * 1000,
     staleTime: 4 * 60 * 1000,
   });
 
@@ -144,10 +150,16 @@ export default function LiveOdds() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-card border border-border/50">
-          <TabsTrigger value="all" data-testid="tab-all-sports">All Sports</TabsTrigger>
-          <TabsTrigger value="nba" data-testid="tab-nba">NBA</TabsTrigger>
-          <TabsTrigger value="nfl" data-testid="tab-nfl">NFL</TabsTrigger>
+        <TabsList className="bg-card border border-border/50 flex-wrap h-auto gap-1 p-1">
+          {TABS.map(tab => (
+            <TabsTrigger
+              key={tab.value}
+              value={tab.value}
+              data-testid={`tab-${tab.value}`}
+            >
+              {tab.label}
+            </TabsTrigger>
+          ))}
         </TabsList>
       </Tabs>
 

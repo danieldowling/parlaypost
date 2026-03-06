@@ -43,90 +43,99 @@ export interface NormalizedGame {
   bookmaker: string;
 }
 
-// Simple in-memory cache to avoid hammering the free tier
-let oddsCache: { data: NormalizedGame[]; fetchedAt: number } | null = null;
+export const ALL_SPORTS = [
+  "basketball_nba",
+  "basketball_ncaab",
+  "americanfootball_nfl",
+  "americanfootball_ncaaf",
+  "icehockey_nhl",
+  "baseball_mlb",
+];
+
+// Per-sport-key in-memory cache to avoid hammering the free tier
+const oddsCache: Map<string, { data: NormalizedGame[]; fetchedAt: number }> = new Map();
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
-export async function getLiveOdds(sports: string[] = ["basketball_nba", "americanfootball_nfl"]): Promise<NormalizedGame[]> {
+async function fetchSport(sport: string): Promise<NormalizedGame[]> {
+  const cached = oddsCache.get(sport);
+  if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
+    return cached.data;
+  }
+
+  const url = `${ODDS_API_BASE}/sports/${sport}/odds?apiKey=${API_KEY}&regions=us&markets=h2h,spreads,totals&oddsFormat=american`;
+  const res = await fetch(url);
+
+  if (!res.ok) {
+    console.error(`Odds API error for ${sport}: ${res.status} ${res.statusText}`);
+    return [];
+  }
+
+  const games: OddsGame[] = await res.json();
+  const normalized: NormalizedGame[] = [];
+
+  for (const game of games) {
+    const bk = game.bookmakers[0];
+    if (!bk) continue;
+
+    const entry: NormalizedGame = {
+      id: game.id,
+      sport: game.sport_key,
+      sportTitle: game.sport_title,
+      commenceTime: game.commence_time,
+      homeTeam: game.home_team,
+      awayTeam: game.away_team,
+      bookmaker: bk.title,
+    };
+
+    for (const market of bk.markets) {
+      if (market.key === "h2h") {
+        const home = market.outcomes.find(o => o.name === game.home_team);
+        const away = market.outcomes.find(o => o.name === game.away_team);
+        if (home && away) {
+          entry.moneyline = { home: home.price, away: away.price };
+        }
+      } else if (market.key === "spreads") {
+        const home = market.outcomes.find(o => o.name === game.home_team);
+        const away = market.outcomes.find(o => o.name === game.away_team);
+        if (home && away && home.point !== undefined && away.point !== undefined) {
+          entry.spread = {
+            homePoint: home.point,
+            homeOdds: home.price,
+            awayPoint: away.point,
+            awayOdds: away.price,
+          };
+        }
+      } else if (market.key === "totals") {
+        const over = market.outcomes.find(o => o.name === "Over");
+        const under = market.outcomes.find(o => o.name === "Under");
+        if (over && under && over.point !== undefined) {
+          entry.total = {
+            point: over.point,
+            overOdds: over.price,
+            underOdds: under.price,
+          };
+        }
+      }
+    }
+
+    normalized.push(entry);
+  }
+
+  oddsCache.set(sport, { data: normalized, fetchedAt: Date.now() });
+  return normalized;
+}
+
+export async function getLiveOdds(sports: string[] = ALL_SPORTS): Promise<NormalizedGame[]> {
   if (!API_KEY) {
     throw new Error("ODDS_API_KEY is not set");
   }
 
-  // Return cached data if fresh
-  if (oddsCache && Date.now() - oddsCache.fetchedAt < CACHE_TTL_MS) {
-    return oddsCache.data;
-  }
-
-  const allGames: NormalizedGame[] = [];
-
-  for (const sport of sports) {
-    try {
-      const url = `${ODDS_API_BASE}/sports/${sport}/odds?apiKey=${API_KEY}&regions=us&markets=h2h,spreads,totals&oddsFormat=american`;
-      const res = await fetch(url);
-
-      if (!res.ok) {
-        console.error(`Odds API error for ${sport}: ${res.status} ${res.statusText}`);
-        continue;
-      }
-
-      const games: OddsGame[] = await res.json();
-
-      for (const game of games) {
-        // Pick the first bookmaker with enough data
-        const bk = game.bookmakers[0];
-        if (!bk) continue;
-
-        const normalized: NormalizedGame = {
-          id: game.id,
-          sport: game.sport_key,
-          sportTitle: game.sport_title,
-          commenceTime: game.commence_time,
-          homeTeam: game.home_team,
-          awayTeam: game.away_team,
-          bookmaker: bk.title,
-        };
-
-        for (const market of bk.markets) {
-          if (market.key === "h2h") {
-            const home = market.outcomes.find(o => o.name === game.home_team);
-            const away = market.outcomes.find(o => o.name === game.away_team);
-            if (home && away) {
-              normalized.moneyline = { home: home.price, away: away.price };
-            }
-          } else if (market.key === "spreads") {
-            const home = market.outcomes.find(o => o.name === game.home_team);
-            const away = market.outcomes.find(o => o.name === game.away_team);
-            if (home && away && home.point !== undefined && away.point !== undefined) {
-              normalized.spread = {
-                homePoint: home.point,
-                homeOdds: home.price,
-                awayPoint: away.point,
-                awayOdds: away.price,
-              };
-            }
-          } else if (market.key === "totals") {
-            const over = market.outcomes.find(o => o.name === "Over");
-            const under = market.outcomes.find(o => o.name === "Under");
-            if (over && under && over.point !== undefined) {
-              normalized.total = {
-                point: over.point,
-                overOdds: over.price,
-                underOdds: under.price,
-              };
-            }
-          }
-        }
-
-        allGames.push(normalized);
-      }
-    } catch (err) {
-      console.error(`Failed to fetch odds for ${sport}:`, err);
-    }
-  }
+  // Fetch all requested sports in parallel
+  const results = await Promise.all(sports.map(fetchSport));
+  const allGames = results.flat();
 
   // Sort by soonest game first
   allGames.sort((a, b) => new Date(a.commenceTime).getTime() - new Date(b.commenceTime).getTime());
 
-  oddsCache = { data: allGames, fetchedAt: Date.now() };
   return allGames;
 }

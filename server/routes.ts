@@ -17,8 +17,11 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   // Authentication setup
+  if (!process.env.SESSION_SECRET) {
+    throw new Error("SESSION_SECRET environment variable must be set");
+  }
   app.use(session({
-    secret: process.env.SESSION_SECRET || 'parlaypost-secret',
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: { secure: process.env.NODE_ENV === "production" }

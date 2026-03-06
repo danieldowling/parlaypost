@@ -216,14 +216,22 @@ export async function registerRoutes(
     console.log(`Received SMS from ${From}: ${Body}`);
     
     try {
-      // Basic regex parser for "$50 Knicks -4.5 vs Bulls"
+      // Improved regex parser for "$50 Knicks -4.5 vs Bulls"
+      // Matches amount: $50, $50.50
       const amountMatch = Body.match(/\$(\d+(\.\d+)?)/);
+      
+      // Matches team name after the amount (e.g., Knicks, Bulls, Lakers)
+      // Look for the first word after the dollar amount
       const teamMatch = Body.match(/\$\d+(?:\.\d+)?\s+([A-Za-z]+)/);
-      const lineMatch = Body.slice(Body.indexOf(teamMatch ? teamMatch[1] : '')).match(/([+-]\d+(\.\d+)?)/);
+      
+      // Matches the line/spread (e.g., -4.5, +7, -110)
+      // Only looks for numbers with a sign (+/-)
+      const lineMatch = Body.match(/([+-]\d+(\.\d+)?)/);
 
       if (amountMatch && teamMatch) {
         const amount = parseFloat(amountMatch[1]);
         const team = teamMatch[1];
+        // If line is found, use it, otherwise default to 0 (moneyline)
         const line = lineMatch ? parseFloat(lineMatch[1]) : 0;
         
         // Find Alice as the default user for simulation if phone lookup isn't implemented

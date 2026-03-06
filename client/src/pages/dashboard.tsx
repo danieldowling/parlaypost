@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "@shared/routes";
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -16,6 +18,7 @@ export default function Dashboard() {
   const { data: bets, isLoading: isLoadingBets } = useUserBets(user?.id);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [smsText, setSmsText] = useState("$50 Knicks -4.5 vs Bulls");
 
   const simulateSmsBet = async () => {
     try {
@@ -25,7 +28,7 @@ export default function Dashboard() {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
-          Body: '$50 Knicks -4.5 vs Bulls',
+          Body: smsText,
           From: '+1234567890',
         }),
       });
@@ -71,14 +74,22 @@ export default function Dashboard() {
           <p className="text-muted-foreground mt-1">Welcome back, {user?.name}. Here's how you're performing.</p>
         </div>
         <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-          <Button 
-            onClick={simulateSmsBet}
-            variant="outline"
-            className="bg-primary/10 hover:bg-primary/20 border-primary/20 text-primary"
-          >
-            <Send className="w-4 h-4 mr-2" />
-            Simulate SMS Bet
-          </Button>
+          <div className="flex items-center gap-2">
+            <Input 
+              value={smsText}
+              onChange={(e) => setSmsText(e.target.value)}
+              className="w-64 bg-background border-primary/20"
+              placeholder="Enter bet text..."
+            />
+            <Button 
+              onClick={simulateSmsBet}
+              variant="outline"
+              className="bg-primary/10 hover:bg-primary/20 border-primary/20 text-primary whitespace-nowrap"
+            >
+              <Send className="w-4 h-4 mr-2" />
+              Simulate SMS
+            </Button>
+          </div>
           <div className="flex items-center space-x-2 bg-card px-4 py-2 rounded-xl border border-border/50">
             <span className="text-sm text-muted-foreground mr-2">SMS Number:</span>
             <span className="font-mono text-primary font-bold">(555) 019-BETS</span>

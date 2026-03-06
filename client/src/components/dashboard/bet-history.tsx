@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -10,46 +11,28 @@ import {
   DialogTrigger
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 20;
 
 interface BetHistoryProps {
   bets: any[];
 }
 
 export function BetHistory({ bets }: BetHistoryProps) {
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  const sentinelRef = useRef<HTMLDivElement>(null);
+  const [page, setPage] = useState(0);
 
   const sortedBets = [...(bets ?? [])].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
-  const visibleBets = sortedBets.slice(0, visibleCount);
-  const hasMore = visibleCount < sortedBets.length;
+  const totalPages = Math.ceil(sortedBets.length / PAGE_SIZE);
+  const visibleBets = sortedBets.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
-  // Reset when the bets list changes (e.g. new bet added)
+  // Reset to first page when bets list changes (e.g. new bet added)
   useEffect(() => {
-    setVisibleCount(PAGE_SIZE);
+    setPage(0);
   }, [bets.length]);
-
-  // Lazy-load: observe the sentinel div and load more rows when it enters the viewport
-  useEffect(() => {
-    if (!sentinelRef.current) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore) {
-          setVisibleCount((c) => c + PAGE_SIZE);
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    observer.observe(sentinelRef.current);
-    return () => observer.disconnect();
-  }, [hasMore]);
 
   const getResultColor = (result: string) => {
     switch (result) {
@@ -191,14 +174,47 @@ export function BetHistory({ bets }: BetHistoryProps) {
         </div>
       </Card>
 
-      {/* Lazy-load sentinel */}
-      <div ref={sentinelRef} className="flex justify-center py-2" data-testid="bet-history-sentinel">
-        {hasMore ? (
-          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground/40" />
-        ) : sortedBets.length > PAGE_SIZE ? (
-          <p className="text-xs text-muted-foreground/40">All {sortedBets.length} bets loaded</p>
-        ) : null}
-      </div>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-1 py-1">
+          <p className="text-xs text-muted-foreground">
+            Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, sortedBets.length)} of {sortedBets.length} bets
+          </p>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => p - 1)}
+              disabled={page === 0}
+              className="h-8 w-8 p-0 border-border/50"
+              data-testid="button-bets-prev"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            {Array.from({ length: totalPages }).map((_, i) => (
+              <Button
+                key={i}
+                variant={i === page ? "default" : "outline"}
+                size="sm"
+                onClick={() => setPage(i)}
+                className={`h-8 w-8 p-0 ${i === page ? "bg-primary text-primary-foreground" : "border-border/50 text-muted-foreground"}`}
+                data-testid={`button-bets-page-${i + 1}`}
+              >
+                {i + 1}
+              </Button>
+            ))}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => p + 1)}
+              disabled={page === totalPages - 1}
+              className="h-8 w-8 p-0 border-border/50"
+              data-testid="button-bets-next"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

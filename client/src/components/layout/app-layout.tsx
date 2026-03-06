@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { LayoutDashboard, Users, LogOut, MessageSquareText } from "lucide-react";
+import { LayoutDashboard, Users, LogOut, MessageSquareText, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface AppLayoutProps {
@@ -22,6 +22,12 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   if (!user) return <>{children}</>;
 
+  const navItems = [
+    { href: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
+    { href: "/odds", label: "Live Odds", icon: TrendingUp, exact: false },
+    { href: "/groups", label: "Groups", icon: Users, exact: false },
+  ];
+
   return (
     <div className="flex min-h-screen w-full bg-background">
       {/* Sidebar */}
@@ -32,28 +38,24 @@ export function AppLayout({ children }: AppLayoutProps) {
         </div>
         
         <nav className="flex-1 p-4 space-y-2">
-          <Link 
-            href="/" 
-            className={`flex items-center px-4 py-3 rounded-xl transition-all duration-200 ${
-              location === "/" 
-                ? "bg-primary/10 text-primary font-semibold" 
-                : "text-muted-foreground hover:bg-white/5 hover:text-foreground hover-elevate active-elevate-2"
-            }`}
-          >
-            <LayoutDashboard className="w-5 h-5 mr-3" />
-            Dashboard
-          </Link>
-          <Link 
-            href="/groups" 
-            className={`flex items-center px-4 py-3 rounded-xl transition-all duration-200 ${
-              location.startsWith("/groups") 
-                ? "bg-primary/10 text-primary font-semibold" 
-                : "text-muted-foreground hover:bg-white/5 hover:text-foreground hover-elevate active-elevate-2"
-            }`}
-          >
-            <Users className="w-5 h-5 mr-3" />
-            Groups
-          </Link>
+          {navItems.map(({ href, label, icon: Icon, exact }) => {
+            const isActive = exact ? location === href : location.startsWith(href);
+            return (
+              <Link
+                key={href}
+                href={href}
+                data-testid={`link-nav-${label.toLowerCase().replace(" ", "-")}`}
+                className={`flex items-center px-4 py-3 rounded-xl transition-all duration-200 ${
+                  isActive
+                    ? "bg-primary/10 text-primary font-semibold"
+                    : "text-muted-foreground hover:bg-white/5 hover:text-foreground hover-elevate active-elevate-2"
+                }`}
+              >
+                <Icon className="w-5 h-5 mr-3" />
+                {label}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="p-4 border-t border-border">
@@ -68,8 +70,9 @@ export function AppLayout({ children }: AppLayoutProps) {
           </div>
           <Button 
             variant="outline" 
-            className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10 border-border"
+            className="w-full justify-start text-muted-foreground border-border"
             onClick={handleLogout}
+            data-testid="button-logout"
           >
             <LogOut className="w-4 h-4 mr-2" />
             Sign Out
@@ -87,6 +90,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           </div>
           <div className="flex space-x-2">
             <Link href="/" className="p-2 text-muted-foreground hover:text-foreground"><LayoutDashboard className="w-5 h-5" /></Link>
+            <Link href="/odds" className="p-2 text-muted-foreground hover:text-foreground"><TrendingUp className="w-5 h-5" /></Link>
             <Link href="/groups" className="p-2 text-muted-foreground hover:text-foreground"><Users className="w-5 h-5" /></Link>
             <button onClick={handleLogout} className="p-2 text-muted-foreground hover:text-destructive"><LogOut className="w-5 h-5" /></button>
           </div>

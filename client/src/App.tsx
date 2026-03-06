@@ -13,6 +13,7 @@ import AuthPage from "@/pages/auth-page";
 import Dashboard from "@/pages/dashboard";
 import Groups from "@/pages/groups";
 import GroupDetail from "@/pages/group-detail";
+import LiveOdds from "@/pages/live-odds";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { user, isLoading } = useAuth();
@@ -57,6 +58,13 @@ function Router() {
         <ProtectedRoute component={() => (
           <AppLayout>
             <GroupDetail />
+          </AppLayout>
+        )} />
+      </Route>
+      <Route path="/odds">
+        <ProtectedRoute component={() => (
+          <AppLayout>
+            <LiveOdds />
           </AppLayout>
         )} />
       </Route>

@@ -6,6 +6,7 @@ import { z } from "zod";
 import session from "express-session";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
+import { getLiveOdds } from "./odds";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -207,6 +208,19 @@ export async function registerRoutes(
     leaderboard.sort((a, b) => b.totalProfitLoss - a.totalProfitLoss);
     
     res.json(leaderboard);
+  });
+
+  // Live odds endpoint
+  app.get(api.odds.live.path, async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const sports = (req.query.sports as string)?.split(',') || ["basketball_nba", "americanfootball_nfl"];
+      const games = await getLiveOdds(sports);
+      res.json(games);
+    } catch (err: any) {
+      console.error("Odds fetch error:", err);
+      res.status(500).json({ message: err.message || "Failed to fetch odds" });
+    }
   });
 
   // Webhook for SMS parsing (Twilio example)

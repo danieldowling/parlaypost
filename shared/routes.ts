@@ -91,6 +91,26 @@ export const api = {
       }
     }
   },
+  odds: {
+    live: {
+      method: 'GET' as const,
+      path: '/api/odds/live' as const,
+      responses: {
+        200: z.array(z.object({
+          id: z.string(),
+          sport: z.string(),
+          sportTitle: z.string(),
+          commenceTime: z.string(),
+          homeTeam: z.string(),
+          awayTeam: z.string(),
+          bookmaker: z.string(),
+          moneyline: z.object({ home: z.number(), away: z.number() }).optional(),
+          spread: z.object({ homePoint: z.number(), homeOdds: z.number(), awayPoint: z.number(), awayOdds: z.number() }).optional(),
+          total: z.object({ point: z.number(), overOdds: z.number(), underOdds: z.number() }).optional(),
+        }))
+      }
+    }
+  },
   users: {
     stats: {
       method: 'GET' as const,

@@ -12,6 +12,7 @@ export default function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const { login, register, isLoggingIn, isRegistering } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -23,7 +24,7 @@ export default function AuthPage() {
         await login({ email, password });
         toast({ title: "Welcome back!", description: "Successfully logged in." });
       } else {
-        await register({ email, password, name });
+        await register({ email, password, name, phone: phone || undefined });
         toast({ title: "Account created!", description: "Welcome to ParlayPost." });
       }
       setLocation("/");
@@ -104,14 +105,33 @@ export default function AuthPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {!isLogin && (
-              <FormField
-                label="Full Name"
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="John Doe"
-                required={!isLogin}
-              />
+              <>
+                <FormField
+                  label="Full Name"
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="John Doe"
+                  required
+                  data-testid="input-register-name"
+                />
+                <div className="space-y-1.5">
+                  <FormField
+                    label="Phone Number"
+                    id="phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+1 (555) 000-0000"
+                    required
+                    data-testid="input-register-phone"
+                  />
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <MessageSquareText className="w-3.5 h-3.5 flex-shrink-0" />
+                    Used to log bets via SMS — include your country code (e.g. +1 for US)
+                  </p>
+                </div>
+              </>
             )}
             <FormField
               label="Email"

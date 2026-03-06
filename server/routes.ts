@@ -305,11 +305,11 @@ export async function registerRoutes(
       const parsed = parseBet(Body);
 
       if (parsed) {
-        const alice = await storage.getUserByEmail("alice@example.com");
+        const user = From ? await storage.getUserByPhone(From) : null;
 
-        if (alice) {
+        if (user) {
           await storage.createBet({
-            userId: alice.id,
+            userId: user.id,
             team: parsed.team,
             betType: parsed.betType,
             line: parsed.line,
@@ -319,7 +319,10 @@ export async function registerRoutes(
             profitLoss: 0
           });
           replyMessage = betConfirmationMessage(parsed);
-          console.log(`Bet stored: ${JSON.stringify(parsed)}`);
+          console.log(`Bet stored for ${user.email}: ${JSON.stringify(parsed)}`);
+        } else {
+          replyMessage = "Your number isn't linked to a ParlayPost account. Sign up at parlaypost.replit.app and add your phone number to start logging bets by text.";
+          console.log(`Unrecognized number: ${From}`);
         }
       } else {
         console.log(`Could not parse bet from: "${Body}"`);

@@ -77,6 +77,10 @@ export function AppLayout({ children }: AppLayoutProps) {
             <LogOut className="w-4 h-4 mr-2" />
             Sign Out
           </Button>
+          <div className="flex justify-center gap-3 mt-3">
+            <a href="/privacy" className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors">Privacy</a>
+            <a href="/terms" className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors">Terms</a>
+          </div>
         </div>
       </aside>
 

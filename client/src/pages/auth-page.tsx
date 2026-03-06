@@ -153,6 +153,11 @@ export default function AuthPage() {
               {isLogin ? "Sign up" : "Sign in"}
             </button>
           </div>
+
+          <div className="mt-6 pt-6 border-t border-border/40 flex justify-center gap-4 text-xs text-muted-foreground">
+            <a href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</a>
+            <a href="/terms" className="hover:text-foreground transition-colors">Terms &amp; Conditions</a>
+          </div>
         </Card>
       </div>
     </div>

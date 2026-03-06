@@ -15,6 +15,7 @@ import Groups from "@/pages/groups";
 import GroupDetail from "@/pages/group-detail";
 import LiveOdds from "@/pages/live-odds";
 import PrivacyPolicy from "@/pages/privacy-policy";
+import Terms from "@/pages/terms";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { user, isLoading } = useAuth();
@@ -70,6 +71,7 @@ function Router() {
         )} />
       </Route>
       <Route path="/privacy" component={PrivacyPolicy} />
+      <Route path="/terms" component={Terms} />
       <Route component={NotFound} />
     </Switch>
   );

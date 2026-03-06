@@ -83,6 +83,10 @@ export default function PrivacyPolicy() {
             </p>
           </div>
         </section>
+        <div className="mt-12 pt-8 border-t border-border/50 flex gap-6 text-xs text-muted-foreground">
+          <a href="/terms" className="hover:text-foreground transition-colors">Terms &amp; Conditions</a>
+          <a href="/" className="hover:text-foreground transition-colors">Back to ParlayPost</a>
+        </div>
       </div>
     </div>
   );

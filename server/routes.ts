@@ -241,6 +241,50 @@ export async function registerRoutes(
     }
   });
 
+  // Update a bet (correct bad SMS parse data)
+  app.patch('/api/bets/:id', async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+
+    const betId = Number(req.params.id);
+    const existing = await storage.getBet(betId);
+    if (!existing) return res.status(404).json({ message: "Bet not found" });
+
+    const userId = (req.user as any).id;
+    if (existing.userId !== userId) return res.status(403).json({ message: "Forbidden" });
+
+    const { team, betType, line, odds, amount, result, gameDate } = req.body;
+
+    // Recalculate profitLoss whenever result is provided
+    let profitLoss = existing.profitLoss ?? 0;
+    const effectiveResult = result ?? existing.result;
+    const effectiveAmount = amount ?? existing.amount;
+    const effectiveOdds = odds ?? existing.odds;
+
+    if (effectiveResult === 'won') {
+      profitLoss = effectiveOdds >= 0
+        ? effectiveAmount * (effectiveOdds / 100)
+        : effectiveAmount * (100 / Math.abs(effectiveOdds));
+    } else if (effectiveResult === 'lost') {
+      profitLoss = -effectiveAmount;
+    } else if (effectiveResult === 'push') {
+      profitLoss = 0;
+    } else if (effectiveResult === 'pending') {
+      profitLoss = 0;
+    }
+
+    const updates: Record<string, any> = { profitLoss };
+    if (team !== undefined) updates.team = team;
+    if (betType !== undefined) updates.betType = betType;
+    if (line !== undefined) updates.line = Number(line);
+    if (odds !== undefined) updates.odds = Number(odds);
+    if (amount !== undefined) updates.amount = Number(amount);
+    if (result !== undefined) updates.result = result;
+    if (gameDate !== undefined) updates.gameDate = gameDate ? new Date(gameDate) : null;
+
+    const updated = await storage.updateBet(betId, updates);
+    res.json(updated);
+  });
+
   // Webhook for SMS parsing (Twilio)
   app.post('/api/webhook/sms', async (req, res) => {
     const { Body, From } = req.body;

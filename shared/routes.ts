@@ -115,6 +115,17 @@ export const api = {
       }
     }
   },
+  bets: {
+    update: {
+      method: 'PATCH' as const,
+      path: '/api/bets/:id' as const,
+      responses: {
+        200: z.custom<typeof bets.$inferSelect>(),
+        403: errorSchemas.unauthorized,
+        404: errorSchemas.notFound,
+      }
+    }
+  },
   users: {
     stats: {
       method: 'GET' as const,

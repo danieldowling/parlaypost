@@ -15,6 +15,8 @@ export interface IStorage {
   getGroupMembers(groupId: number): Promise<User[]>;
   
   createBet(bet: InsertBet): Promise<Bet>;
+  updateBet(id: number, updates: Partial<InsertBet>): Promise<Bet | undefined>;
+  getBet(id: number): Promise<Bet | undefined>;
   getUserBets(userId: number): Promise<Bet[]>;
   getGroupBets(groupId: number): Promise<Bet[]>;
 }
@@ -83,6 +85,16 @@ export class DatabaseStorage implements IStorage {
 
   async createBet(insertBet: InsertBet): Promise<Bet> {
     const [bet] = await db.insert(bets).values(insertBet).returning();
+    return bet;
+  }
+
+  async getBet(id: number): Promise<Bet | undefined> {
+    const [bet] = await db.select().from(bets).where(eq(bets.id, id));
+    return bet;
+  }
+
+  async updateBet(id: number, updates: Partial<InsertBet>): Promise<Bet | undefined> {
+    const [bet] = await db.update(bets).set(updates).where(eq(bets.id, id)).returning();
     return bet;
   }
 

@@ -23,11 +23,12 @@ export function useGroups() {
   });
 }
 
-export function useGroupLeaderboard(groupId: number) {
+export function useGroupLeaderboard(groupId: number, period: string = 'all') {
   return useQuery({
-    queryKey: [api.groups.leaderboard.path, groupId],
+    queryKey: [api.groups.leaderboard.path, groupId, period],
     queryFn: async () => {
-      const url = buildUrl(api.groups.leaderboard.path, { id: groupId });
+      const base = buildUrl(api.groups.leaderboard.path, { id: groupId });
+      const url = period !== 'all' ? `${base}?period=${period}` : base;
       const res = await fetch(url, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch leaderboard");
       const data = await res.json();

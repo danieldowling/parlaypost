@@ -179,35 +179,52 @@ export async function registerRoutes(
 
   app.get(api.groups.leaderboard.path, async (req, res) => {
     const groupId = Number(req.params.id);
+    const period = (req.query.period as string) || 'all';
     const members = await storage.getGroupMembers(groupId);
-    
+
+    const now = new Date();
+    let since: Date | null = null;
+    if (period === 'ytd') {
+      since = new Date(now.getFullYear(), 0, 1);
+    } else if (period === '1month') {
+      since = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    } else if (period === '1week') {
+      since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    }
+
     const leaderboard = await Promise.all(members.map(async (member) => {
-      const userBets = await storage.getUserBets(member.id);
-      // Only count bets for this group if we wanted to isolate them, 
-      // but typical sports betting groups just compare overall performance.
-      // We'll calculate their total P/L
-      
+      const allBets = await storage.getUserBets(member.id);
+      const userBets = since
+        ? allBets.filter(b => new Date(b.createdAt) >= since!)
+        : allBets;
+
       let totalProfitLoss = 0;
       let wins = 0;
-      let finishedBets = 0;
-      
+      let losses = 0;
+      let pushes = 0;
+
       userBets.forEach(bet => {
         if (bet.profitLoss) totalProfitLoss += bet.profitLoss;
-        if (bet.result !== 'pending') finishedBets++;
         if (bet.result === 'won') wins++;
+        else if (bet.result === 'lost') losses++;
+        else if (bet.result === 'push') pushes++;
       });
-      
+
+      const finishedBets = wins + losses + pushes;
+
       return {
         userId: member.id,
         name: member.name,
         totalProfitLoss,
-        winPercentage: finishedBets > 0 ? (wins / finishedBets) * 100 : 0
+        winPercentage: finishedBets > 0 ? (wins / finishedBets) * 100 : 0,
+        wins,
+        losses,
+        pushes,
+        totalBets: userBets.length,
       };
     }));
-    
-    // Sort by profit/loss descending
+
     leaderboard.sort((a, b) => b.totalProfitLoss - a.totalProfitLoss);
-    
     res.json(leaderboard);
   });
 

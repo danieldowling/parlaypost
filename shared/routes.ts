@@ -86,7 +86,11 @@ export const api = {
           userId: z.number(),
           name: z.string(),
           totalProfitLoss: z.number(),
-          winPercentage: z.number()
+          winPercentage: z.number(),
+          wins: z.number(),
+          losses: z.number(),
+          pushes: z.number(),
+          totalBets: z.number(),
         }))
       }
     }

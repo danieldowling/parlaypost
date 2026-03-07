@@ -1,4 +1,9 @@
 import { storage } from "./server/storage";
+import bcrypt from "bcryptjs";
+
+async function hashPassword(plain: string) {
+  return bcrypt.hash(plain, 12);
+}
 
 async function seedDatabase() {
   console.log("Seeding database...");
@@ -7,22 +12,22 @@ async function seedDatabase() {
     // ── Weekend Warriors users ──────────────────────────────────────────────
     let user1 = await storage.getUserByEmail("alice@example.com");
     if (!user1) {
-      user1 = await storage.createUser({ email: "alice@example.com", password: "password123", name: "Alice" });
+      user1 = await storage.createUser({ email: "alice@example.com", password: await hashPassword("password123"), name: "Alice" });
     }
 
     let user2 = await storage.getUserByEmail("bob@example.com");
     if (!user2) {
-      user2 = await storage.createUser({ email: "bob@example.com", password: "password123", name: "Bob" });
+      user2 = await storage.createUser({ email: "bob@example.com", password: await hashPassword("password123"), name: "Bob" });
     }
 
     let user3 = await storage.getUserByEmail("charlie@example.com");
     if (!user3) {
-      user3 = await storage.createUser({ email: "charlie@example.com", password: "password123", name: "Charlie" });
+      user3 = await storage.createUser({ email: "charlie@example.com", password: await hashPassword("password123"), name: "Charlie" });
     }
 
     let user4 = await storage.getUserByEmail("diana@example.com");
     if (!user4) {
-      user4 = await storage.createUser({ email: "diana@example.com", password: "password123", name: "Diana" });
+      user4 = await storage.createUser({ email: "diana@example.com", password: await hashPassword("password123"), name: "Diana" });
     }
 
     // ── Weekend Warriors group ──────────────────────────────────────────────
@@ -85,37 +90,37 @@ async function seedDatabase() {
     // ── NGLG BETS users ─────────────────────────────────────────────────────
     let deez = await storage.getUserByEmail("deez@nglg.com");
     if (!deez) {
-      deez = await storage.createUser({ email: "deez@nglg.com", password: "password123", name: "Deez" });
+      deez = await storage.createUser({ email: "deez@nglg.com", password: await hashPassword("password123"), name: "Deez" });
     }
 
     let hags = await storage.getUserByEmail("hags@nglg.com");
     if (!hags) {
-      hags = await storage.createUser({ email: "hags@nglg.com", password: "password123", name: "Hags" });
+      hags = await storage.createUser({ email: "hags@nglg.com", password: await hashPassword("password123"), name: "Hags" });
     }
 
     let heuss = await storage.getUserByEmail("heuss@nglg.com");
     if (!heuss) {
-      heuss = await storage.createUser({ email: "heuss@nglg.com", password: "password123", name: "Heuss" });
+      heuss = await storage.createUser({ email: "heuss@nglg.com", password: await hashPassword("password123"), name: "Heuss" });
     }
 
     let campy = await storage.getUserByEmail("campy@nglg.com");
     if (!campy) {
-      campy = await storage.createUser({ email: "campy@nglg.com", password: "password123", name: "Campy" });
+      campy = await storage.createUser({ email: "campy@nglg.com", password: await hashPassword("password123"), name: "Campy" });
     }
 
     let mrzee = await storage.getUserByEmail("mrzee@nglg.com");
     if (!mrzee) {
-      mrzee = await storage.createUser({ email: "mrzee@nglg.com", password: "password123", name: "Mr. Zee" });
+      mrzee = await storage.createUser({ email: "mrzee@nglg.com", password: await hashPassword("password123"), name: "Mr. Zee" });
     }
 
     let beej = await storage.getUserByEmail("beej@nglg.com");
     if (!beej) {
-      beej = await storage.createUser({ email: "beej@nglg.com", password: "password123", name: "Beej" });
+      beej = await storage.createUser({ email: "beej@nglg.com", password: await hashPassword("password123"), name: "Beej" });
     }
 
     let ump = await storage.getUserByEmail("ump@nglg.com");
     if (!ump) {
-      ump = await storage.createUser({ email: "ump@nglg.com", password: "password123", name: "UMP" });
+      ump = await storage.createUser({ email: "ump@nglg.com", password: await hashPassword("password123"), name: "UMP" });
     }
 
     // ── NGLG BETS group ─────────────────────────────────────────────────────

@@ -78,8 +78,8 @@ export default function PrivacyPolicy() {
           <div>
             <h2 className="text-lg font-semibold text-foreground mb-2">Contact</h2>
             <p>
-              If you have questions about this policy or wish to request data deletion, please contact the
-              app administrator directly.
+              If you have questions about this policy or wish to request data deletion, please contact us at{" "}
+              <a href="mailto:hello@parlaypost.com" className="text-primary hover:underline">hello@parlaypost.com</a>.
             </p>
           </div>
         </section>

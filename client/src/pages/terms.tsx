@@ -82,8 +82,8 @@ export default function Terms() {
           <div>
             <h2 className="text-lg font-semibold text-foreground mb-2">Contact</h2>
             <p>
-              If you have questions about these terms, please contact the app administrator through the
-              ParlayPost dashboard.
+              If you have questions about these terms, please contact us at{" "}
+              <a href="mailto:hello@parlaypost.com" className="text-primary hover:underline">hello@parlaypost.com</a>.
             </p>
           </div>
         </section>
